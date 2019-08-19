@@ -2,30 +2,26 @@
 # -*- coding:utf-8 -*-
 import threading
 import time
+from threading import Thread
+
+database = []
+
+
+def collection_ip(database, ip, threadLock):
+    threadLock.acquire()
+    database.append(ip)
+    time.sleep(2)
+    threadLock.release()
 
 
 def funcA():
-    class MyThread(threading.Thread):
-        def __init__(self, threadID, ip):
-            threading.Thread.__init__(self)
-            self.threadID = threadID
-            self.ip = "1.1.1.%d" % ip
-
-        def run(self):
-            threadLock = threading.Lock()
-            threadLock.acquire()
-            print "Starting thread [%d]" % self.threadID
-            storage.append(self.ip)
-            time.sleep(2)
-            threadLock.release()
-            print "Exiting thread [%d]" % self.threadID
-
-    storage = []
     start = time.time()
     threads = []
     threadID = 1
     for i in range(10):
-        thread = MyThread(threadID, i)
+        threadLock = threading.Lock()
+        ip = "1.1.1.%d" % i
+        thread = Thread(target=collection_ip, args=(database, ip, threadLock))
         thread.start()
         threads.append(thread)
         threadID += 1
@@ -33,10 +29,9 @@ def funcA():
         t.join()
 
     print "span:", time.time() - start
-    return storage
 
 
 if __name__ == '__main__':
-    ips = funcA()
-    print ips
+    funcA()
+    print database
 
