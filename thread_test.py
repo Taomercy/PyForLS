@@ -28,10 +28,10 @@ def funcA():
     for t in threads:
         t.join()
 
-    print "span:", time.time() - start
+    print("span:", time.time() - start)
 
 
 if __name__ == '__main__':
     funcA()
-    print database
+    print(database)
 
