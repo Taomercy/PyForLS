@@ -1,12 +1,16 @@
 import re
+import threading
+import time
+from threading import Thread
 
 
 class Desentisize(object):
     data = None
 
     def __init__(self, data):
-        self.data = data
-        self.rules = iter([self.match_telphone, self.match_email, self.match_idcard, self.match_mobel])
+        self.input = data
+        self.rules = [self.match_telphone, self.match_email, self.match_idcard, self.match_mobel]
+        self.output = []
 
     def match_telphone(self, context):
         p = re.compile(r"^1[3-9]\d{9}$")
@@ -28,23 +32,39 @@ class Desentisize(object):
         res = p.findall(context)
         return res
 
-    def deal(self):
-        try:
-            func = next(self.rules)
-            for k, v in self.data.items():
-                res = func(v)
+    def thread_func(self, json, threadLock):
+        threadLock.acquire()
+        for key, value in json.items():
+            for rule in self.rules:
+                res = rule(value)
                 if res:
-                    self.data[k] = v.replace(res[0], "*****")
-            self.deal()
-        except StopIteration:
-            return
+                    json[key] = value.replace(res[0], "****")
+        self.output.append(json)
+        threadLock.release()
+
+    def deal(self):
+        start = time.time()
+        threads = []
+        for info in self.input:
+            threadLock = threading.Lock()
+            thread = Thread(target=self.thread_func, args=(info, threadLock))
+            thread.start()
+            threads.append(thread)
+        for t in threads:
+            t.join()
+        print("span:", time.time() - start)
 
 
 input_data = {'email': "1228291335@qq.com",
               "mobile-phone": "17621063414",
               "tel-phone": "021-65979152"}
 
-des = Desentisize(input_data)
-print("before:", des.data)
+json_list = []
+for i in range(0, 500):
+    json_list.append(input_data)
+
+print("data size:", len(json_list))
+des = Desentisize(json_list)
+print("before:", des.input)
 des.deal()
-print("after:", des.data)
+print("after:", des.output)
