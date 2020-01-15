@@ -3,6 +3,7 @@ import threading
 import time
 from threading import Thread
 from desentisize import Desensitization
+thread_max = threading.Semaphore(50)
 
 
 def span_cal(func):
@@ -48,22 +49,24 @@ class Desentisize(object):
     #         return Desensitization(address=context).get_address()
     #     return None
 
-    def thread_func(self, json, threadLock):
-        threadLock.acquire()
+    def thread_func(self, json, thread_lock):
+        thread_max.acquire()
+        thread_lock.acquire()
         for key, value in json.items():
             for rule in self.rules:
                 res = rule(value)
                 if res:
                     json[key] = res
         self.output.append(json)
-        threadLock.release()
+        thread_lock.release()
+        thread_max.release()
 
     @span_cal
     def deal(self):
         threads = []
         for info in self.input:
-            threadLock = threading.Lock()
-            thread = Thread(target=self.thread_func, args=(info, threadLock))
+            thread_lock = threading.Lock()
+            thread = Thread(target=self.thread_func, args=(info, thread_lock))
             thread.start()
             threads.append(thread)
         for t in threads:
@@ -71,8 +74,8 @@ class Desentisize(object):
 
 
 input_data = {'email': "linqunbin@126.com",
-              "mobile-phone": "18911112222",
-              "identity_card": "123123200001011234",
+              "mobile-phone": "021-33654749",
+              "identity_card": "310226199511124589",
               "address": "上海市虹口区某某路某某号123室"}
 
 json_list = []
