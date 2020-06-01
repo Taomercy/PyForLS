@@ -18,7 +18,7 @@ def send_mail(html):
     mail_info = {
         "from": "wei.wu@cienet.com.cn",
         "to": ["jiaqianchen@cienet.com.cn"],
-        "cc": ["yinglei.jiang@cienet.com.cn", "wentao.qin@cienet.com.cn"],
+        "cc": ["yinglei.jiang@cienet.com.cn", "wentao.qin@cienet.com.cn", "wei.wu@cienet.com.cn"],
         "hostname": "smtp.263xmail.com",
         "username": "wei.wu@cienet.com.cn",
         "password": mail_password,
@@ -28,7 +28,7 @@ def send_mail(html):
     }
 
     smtp = SMTP_SSL(mail_info["hostname"])
-    smtp.set_debuglevel(1)
+    # smtp.set_debuglevel(1)
 
     smtp.ehlo(mail_info["hostname"])
     smtp.login(mail_info["username"], mail_info["password"])
@@ -38,8 +38,13 @@ def send_mail(html):
     msg["To"] = ",".join(mail_info["to"])
     msg["Cc"] = ",".join(mail_info["cc"])
 
-    smtp.sendmail(mail_info["from"], mail_info["to"] + mail_info["cc"], msg.as_string())
-    smtp.quit()
+    try:
+        if not smtp.sendmail(mail_info["from"], mail_info["to"] + mail_info["cc"], msg.as_string()):
+            print("send success!")
+    except Exception as e:
+        print(e)
+    finally:
+        smtp.quit()
 
 
 class MailTable(object):
